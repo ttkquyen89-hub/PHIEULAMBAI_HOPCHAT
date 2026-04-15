@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu Bài Làm Hóa Học - THCS Mỹ Hòa</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+
+        :root {
+            --primary-color: #0f172a;
+            --teal-deep: #0d9488;
+            --teal-light: #f0fdfa;
+            --rose-red: #e11d48;
+            --emerald-green: #059669;
+            --paper-bg: #ffffff;
+            --slate-bg: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--paper-bg);
+            margin: 0;
+            padding: 0;
+            color: var(--primary-color);
+            line-height: 1.6;
+            font-size: 18px; /* Tăng cỡ chữ cơ sở */
+        }
+
+        /* Giao diện tờ giấy thi FULL MÀN HÌNH */
+        .exam-sheet {
+            width: 100%;
+            margin: 0;
+            background-color: var(--paper-bg);
+            box-shadow: none;
+            border-radius: 0;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            min-height: 100vh;
+        }
+
+        /* Lề đỏ giả lập gáy giấy */
+        .exam-sheet::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            background-color: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .content {
+            padding: 20px 20px 40px 30px; /* Thêm padding bên trái để tránh đè lề đỏ */
+        }
+
+        @media (min-width: 768px) {
+            body { padding: 0; }
+            .content { padding: 40px 60px 60px 80px; } /* Căn lề rộng rãi hơn cho full màn hình */
+            .exam-sheet::before { width: 15px; }
+        }
+
+        /* Nút toàn màn hình */
+        .fullscreen-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 65px; /* To hơn */
+            height: 65px; /* To hơn */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: all 0.2s;
+        }
+        
+        .fullscreen-btn:hover {
+            transform: scale(1.1);
+            background-color: var(--teal-deep);
+        }
+        
+        .fullscreen-btn svg {
+            width: 30px;
+            height: 30px;
+        }
+
+        /* Header thông tin */
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            border-bottom: 4px solid var(--primary-color);
+            padding-bottom: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (min-width: 1024px) {
+            .header-info { flex-direction: row; align-items: stretch; gap: 40px; }
+        }
+
+        .student-details {
+            flex: 1;
+            font-size: 1.4rem; /* To hơn */
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .info-row {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .info-value {
+            border-bottom: 3px dotted #94a3b8;
+            flex: 1;
+            color: #1e40af;
+            font-size: 1.6rem; /* To hơn */
+            padding-left: 10px;
+        }
+
+        .input-line {
+            border: none;
+            border-bottom: 3px dashed #cbd5e1;
+            width: 100%;
+            outline: none;
+            color: #1e40af;
+            font-weight: 900;
+            font-size: 1.6rem; /* To hơn */
+            background: transparent;
+        }
+
+        /* Khung điểm */
+        .score-box {
+            border: 4px solid black;
+            width: 100%;
+            flex: 1.8; /* Kéo dài khung ra chiếm phần lớn chiều ngang */
+            display: flex;
+            flex-direction: column;
+            box-shadow: 6px 6px 0 rgba(0,0,0,0.05);
+        }
+
+        .score-header {
+            display: flex;
+            border-bottom: 4px solid black;
+            background: #f8fafc;
+        }
+
+        .score-label {
+            flex: 0 0 25%; /* Cố định 25% chiều rộng */
+            text-align: center;
+            font-weight: 900;
+            font-size: 1.2rem;
+            padding: 10px;
+            border-right: 4px solid black;
+        }
+
+        .comment-label {
+            flex: 1; /* Chiếm phần còn lại */
+            text-align: center;
+            font-weight: 900;
+            font-size: 1.2rem;
+            padding: 10px;
+        }
+
+        .score-body {
+            display: flex;
+            flex: 1; /* Tự động giãn chiều cao */
+            min-height: 150px; /* Tăng chiều cao lên cho giống giấy thi thật */
+        }
+
+        .score-display {
+            flex: 0 0 25%; /* Cố định đúng 25% chiều rộng giống phần header */
+            border-right: 4px solid black;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            font-weight: 900;
+            color: var(--rose-red);
+        }
+
+        .comment-display {
+            flex: 1; /* Chiếm phần còn lại giống header */
+            padding: 20px;
+            font-style: italic;
+            font-size: 1.4rem;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            position: relative;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+            line-height: 1.5;
+        }
+
+        /* Chữ viết tay của giáo viên */
+        .handwritten-comment {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3.2rem; /* Tăng cỡ chữ để font nét thanh đậm hiển thị rõ hơn */
+            color: #dc2626; /* Màu đỏ mực bút bi */
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+            transform: rotate(-3deg); /* Nghiêng nhẹ tự nhiên */
+            display: inline-block;
+            line-height: 1.2;
+        }
+
+        /* Tiêu đề chính */
+        .main-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .main-title h1 {
+            font-size: 2.5rem; /* To hơn */
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+
+        .main-title p {
+            font-weight: bold;
+            color: #64748b;
+            font-size: 1.3rem; /* To hơn */
+            text-transform: uppercase;
+            margin-top: 10px;
+            border-top: 2px solid #f1f5f9;
+            border-bottom: 2px solid #f1f5f9;
+            display: inline-block;
+            padding: 8px 25px;
+        }
+
+        @media (min-width: 768px) {
+            .main-title h1 { font-size: 4rem; }
+        }
+
+        /* Sections */
+        .section-title {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 25px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-style: italic;
+            border-radius: 0 40px 40px 0;
+            margin: 50px 0 30px -20px;
+            width: fit-content;
+            box-shadow: 6px 6px 15px rgba(0,0,0,0.1);
+            font-size: 1.4rem; /* To hơn */
+        }
+
+        .question-block {
+            margin-bottom: 40px;
+            padding-left: 10px;
+        }
+
+        .question-text {
+            font-weight: bold;
+            font-size: 2rem; /* Tăng từ 1.6rem lên 2rem */
+            margin-bottom: 20px;
+            border-left: 6px solid #e2e8f0;
+            padding-left: 20px;
+            line-height: 1.4;
+        }
+
+        /* Đáp án trắc nghiệm */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media (min-width: 640px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #f1f5f9;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: left;
+            font-size: 2rem; /* Đã tăng size chữ đáp án */
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: #475569;
+        }
+
+        .option-marker {
+            width: 55px; /* Tăng kích thước hộp A, B, C, D */
+            height: 55px;
+            border: 3px solid #cbd5e1;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.6rem; /* Tăng size chữ trong hộp */
+            font-weight: 900;
+        }
+
+        /* States */
+        .option-btn.correct {
+            background-color: #ecfdf5;
+            border-color: var(--emerald-green);
+            color: #064e3b;
+            transform: translateX(5px);
+        }
+        .option-btn.correct .option-marker {
+            background-color: var(--emerald-green);
+            border-color: var(--emerald-green);
+            color: white;
+        }
+
+        .option-btn.wrong {
+            background-color: #fff1f2;
+            border-color: #fca5a5;
+            color: #991b1b;
+            opacity: 0.7;
+        }
+        .option-btn.wrong .option-marker {
+            background-color: var(--rose-red);
+            border-color: var(--rose-red);
+            color: white;
+        }
+
+        /* Đúng Sai Buttons - Layout Mới (Dạng Bảng) */
+        .tf-table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 40px;
+        }
+
+        .tf-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 2rem; /* Tăng size chữ phát biểu đúng sai */
+            background: white;
+        }
+
+        .tf-table th {
+            background-color: var(--slate-bg);
+            border: 4px solid #cbd5e1;
+            padding: 15px;
+            text-align: center;
+            color: var(--primary-color);
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .tf-table td {
+            border: 4px solid #cbd5e1;
+            padding: 0;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .tf-table td:first-child {
+            text-align: left;
+            font-weight: bold;
+            line-height: 1.4;
+            padding: 20px 15px;
+        }
+
+        .tf-tick-btn {
+            width: 100%;
+            height: 100%;
+            min-height: 80px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 3.5rem;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 0;
+            outline: none;
+        }
+
+        .tf-tick-btn:hover:not(:disabled) {
+            background-color: #f1f5f9;
+        }
+
+        .tf-tick-btn.correct {
+            background-color: transparent;
+            color: var(--emerald-green);
+        }
+
+        .tf-tick-btn.correct::after {
+            content: "✔";
+        }
+
+        .tf-tick-btn.wrong {
+            background-color: transparent;
+            color: var(--rose-red);
+        }
+
+        .tf-tick-btn.wrong::after {
+            content: "✘";
+        }
+
+        /* Tự luận */
+        .sa-input-wrapper {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 20px;
+            border: 3px solid #f1f5f9;
+            margin-top: 15px;
+        }
+
+        .sa-input {
+            width: 100%;
+            border: none;
+            border-bottom: 4px solid #cbd5e1;
+            background: transparent;
+            font-size: 2.5rem; /* Tăng từ 2.2rem lên 2.5rem */
+            font-weight: 900;
+            padding: 10px;
+            outline: none;
+            color: var(--primary-color);
+            transition: border-color 0.3s;
+        }
+
+        .sa-input:focus { border-color: #3b82f6; }
+        .sa-input.correct { color: var(--emerald-green); border-color: var(--emerald-green); }
+        .sa-input.wrong { color: var(--rose-red); border-color: var(--rose-red); text-decoration: line-through; }
+
+        /* Nút nộp bài */
+        .footer-actions {
+            margin-top: 80px;
+            text-align: center;
+            border-top: 3px dashed #e2e8f0;
+            padding-top: 50px;
+        }
+
+        .submit-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 25px 60px;
+            font-size: 1.8rem; /* To hơn */
+            font-weight: 900;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 12px 0 #000;
+            transition: all 0.1s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .submit-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 6px 0 #000;
+        }
+
+        .reset-btn {
+            margin-top: 25px;
+            background: none;
+            border: 3px solid #cbd5e1;
+            padding: 15px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.3rem; /* To hơn */
+            font-weight: bold;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 25px auto;
+        }
+
+        .signature {
+            margin-top: 50px;
+            text-align: right;
+            font-style: italic;
+            font-size: 1.3rem; /* To hơn */
+        }
+
+        /* Utils */
+        .hidden { display: none; }
+        .animate-zoom { animation: zoomIn 0.5s ease-out; }
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nút Toàn Màn Hình -->
+    <button class="fullscreen-btn" onclick="toggleFullScreen()" title="Bật/Tắt Toàn Màn Hình">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+        </svg>
+    </button>
+
+    <div class="exam-sheet">
+        <div class="content">
+            
+            <!-- Thông tin học sinh -->
+            <div class="header-info">
+                <div class="student-details">
+                    <div class="info-row">
+                        <span>Trường:</span>
+                        <div class="info-value">THCS Mỹ Hòa</div>
+                    </div>
+                    <div class="info-row">
+                        <span>Lớp:</span>
+                        <div class="info-value">7.3</div>
+                    </div>
+                    <div class="info-row" style="margin-top: 25px;">
+                        <span>Họ và tên:</span>
+                        <div style="flex: 1;"><input type="text" class="input-line" placeholder="................................"></div>
+                    </div>
+                </div>
+
+                <!-- Khung điểm -->
+                <div class="score-box">
+                    <div class="score-header">
+                        <div class="score-label">ĐIỂM</div>
+                        <div class="comment-label">LỜI PHÊ</div>
+                    </div>
+                    <div class="score-body">
+                        <div id="final-score" class="score-display">?</div>
+                        <div id="teacher-comment" class="comment-display">Chưa nộp bài...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tiêu đề bài kiểm tra -->
+            <div class="main-title">
+                <h1>BÀI KIỂM TRA CỦNG CỐ</h1>
+                <p>Môn: Hóa Học - Chủ đề: Hợp Chất</p>
+            </div>
+
+            <div id="exam-container">
+                <!-- PHẦN I -->
+                <div class="section-title">Phần I: Trắc nghiệm khách quan</div>
+                <div id="multiple-choice-section"></div>
+
+                <!-- PHẦN II -->
+                <div class="section-title">Phần II: Câu hỏi Đúng - Sai</div>
+                <div id="true-false-section"></div>
+
+                <!-- PHẦN III -->
+                <div class="section-title">PHẦN III. TRẢ LỜI NGẮN</div>
+                <div id="short-answer-section"></div>
+            </div>
+
+            <!-- Chữ ký & Nút bấm -->
+            <div class="footer-actions">
+                <button id="btn-submit" class="submit-btn" onclick="submitExam()">Nộp Bài Củng Cố</button>
+                <button id="btn-reset" class="reset-btn hidden" onclick="resetExam()">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    Làm lại bài mới
+                </button>
+                <div class="signature">
+                    Học sinh ký tên<br><br><br>
+                    <strong>(Ký và ghi rõ họ tên)</strong>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Ngân hàng câu hỏi ngẫu nhiên cho Phần Trả lời ngắn ---
+        const saPool1 = [
+            { question: 'Cho các chất sau: O₂, H₂O, CO₂, NaCl, Fe. Có bao nhiêu chất là hợp chất?', correct: '3' },
+            { question: 'Cho các chất sau: H₂, Cl₂, HCl, NaOH, KOH. Có bao nhiêu chất là hợp chất?', correct: '3' },
+            { question: 'Cho các chất sau: Cu, Ag, H₂SO₄, O₂. Có bao nhiêu chất là hợp chất?', correct: '1' },
+            { question: 'Cho các chất sau: CO, CO₂, SO₂, N₂, O₂. Có bao nhiêu chất là hợp chất?', correct: '3' },
+            { question: 'Cho các chất sau: NaCl, KCl, MgCl₂, Al. Có bao nhiêu chất là hợp chất?', correct: '3' }
+        ];
+
+        const saPool2 = [
+            { question: 'Tính khối lượng phân tử của calcium carbonate (CaCO₃).', correct: '100' },
+            { question: 'Tính khối lượng phân tử của nước (H₂O).', correct: '18' },
+            { question: 'Tính khối lượng phân tử của carbon dioxide (CO₂).', correct: '44' },
+            { question: 'Tính khối lượng phân tử của sulfuric acid (H₂SO₄).', correct: '98' },
+            { question: 'Tính khối lượng phân tử của magnesium oxide (MgO).', correct: '40' },
+            { question: 'Tính khối lượng phân tử của sodium hydroxide (NaOH).', correct: '40' }
+        ];
+
+        const data = {
+            multipleChoice: [
+                {
+                    id: 'mc1',
+                    question: 'Hợp chất là chất được tạo nên từ',
+                    options: [
+                        { text: 'một nguyên tố hóa học', isCorrect: false },
+                        { text: 'hai hay nhiều nguyên tố hóa học khác nhau', isCorrect: true },
+                        { text: 'nhiều nguyên tử giống nhau', isCorrect: false },
+                        { text: 'một nguyên tử duy nhất', isCorrect: false }
+                    ]
+                },
+                {
+                    id: 'mc2',
+                    question: 'Trong các chất sau, chất nào là hợp chất?',
+                    options: [
+                        { text: 'Oxygen (O₂)', isCorrect: false },
+                        { text: 'Nitrogen (N₂)', isCorrect: false },
+                        { text: 'Nước (H₂O)', isCorrect: true },
+                        { text: 'Iron (Fe)', isCorrect: false }
+                    ]
+                },
+                {
+                    id: 'mc3',
+                    question: 'Chất nào sau đây là đơn chất?',
+                    options: [
+                        { text: 'Carbon dioxide (CO₂)', isCorrect: false },
+                        { text: 'Nước (H₂O)', isCorrect: false },
+                        { text: 'Sodium chloride (NaCl)', isCorrect: false },
+                        { text: 'Oxygen (O₂)', isCorrect: true }
+                    ]
+                }
+            ],
+            trueFalse: [
+                {
+                    id: 'tf1',
+                    question: 'Hợp chất được tạo nên từ ít nhất hai nguyên tố hóa học khác nhau.',
+                    correct: true
+                },
+                {
+                    id: 'tf2',
+                    question: 'Nước (H₂O) là hợp chất vì gồm nguyên tố hydrogen và oxygen.',
+                    correct: true
+                },
+                {
+                    id: 'tf3',
+                    question: 'Carbon dioxide (CO₂) là hợp chất vì có nhiều nguyên tử.',
+                    correct: false
+                }
+            ],
+            shortAnswer: [] // Sẽ được điền ngẫu nhiên từ ngân hàng câu hỏi ở hàm init()
+        };
+
+        let answers = {};
+        let locked = {};
+        let wrongAttempts = {};
+        let isSubmitted = false;
+
+        // --- Hàm xáo trộn mảng (Fisher-Yates Shuffle) ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- Thêm Web Audio API để tạo hiệu ứng âm thanh ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playSound(type) {
+            // Cần resume AudioContext vì các trình duyệt thường chặn âm thanh cho đến khi người dùng tương tác
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                // Âm thanh "Ting" tươi sáng khi đúng
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                gainNode.gain.setValueAtTime(0.5, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                // Âm thanh "Bíp" trầm báo lỗi khi sai
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+        // ----------------------------------------------------
+
+        function init() {
+            // Bốc ngẫu nhiên câu hỏi trả lời ngắn từ ngân hàng dữ liệu
+            const randSA1 = saPool1[Math.floor(Math.random() * saPool1.length)];
+            const randSA2 = saPool2[Math.floor(Math.random() * saPool2.length)];
+            
+            data.shortAnswer = [
+                { id: 'sa1', question: randSA1.question, correct: randSA1.correct },
+                { id: 'sa2', question: randSA2.question, correct: randSA2.correct }
+            ];
+
+            // Xáo trộn câu hỏi ở tất cả các phần
+            shuffleArray(data.multipleChoice);
+            shuffleArray(data.trueFalse);
+            shuffleArray(data.shortAnswer);
+
+            // Xáo trộn thứ tự các lựa chọn trong câu trắc nghiệm
+            data.multipleChoice.forEach(q => {
+                shuffleArray(q.options);
+                // Sau khi xáo trộn, gán lại giá trị A, B, C, D cho các lựa chọn
+                q.options.forEach((opt, idx) => {
+                    opt.value = String.fromCharCode(65 + idx); // 65 là mã ASCII của 'A'
+                    opt.label = `${opt.value}. ${opt.text}`;
+                    // Cập nhật đáp án đúng dựa trên vị trí mới
+                    if (opt.isCorrect) q.correct = opt.value;
+                });
+            });
+
+            renderMC();
+            renderTF();
+            renderSA();
+        }
+
+        function renderMC() {
+            const container = document.getElementById('multiple-choice-section');
+            container.innerHTML = data.multipleChoice.map((q, index) => `
+                <div class="question-block">
+                    <div class="question-text">Câu ${index + 1}: ${q.question}</div>
+                    <div class="options-grid">
+                        ${q.options.map(opt => `
+                            <button id="btn-${q.id}-${opt.value}" class="option-btn" onclick="handleMC('${q.id}', '${opt.value}', '${q.correct}')">
+                                <div class="option-marker">${opt.value}</div>
+                                <span>${opt.label}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTF() {
+            const container = document.getElementById('true-false-section');
+            container.innerHTML = `
+                <div class="tf-table-wrapper">
+                    <table class="tf-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 70%;">Phát biểu</th>
+                                <th style="width: 15%;">Đúng</th>
+                                <th style="width: 15%;">Sai</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.trueFalse.map((q, index) => `
+                                <tr>
+                                    <td>Câu ${index + 1}: ${q.question}</td>
+                                    <td><button id="btn-${q.id}-true" class="tf-tick-btn" onclick="handleTF('${q.id}', true, ${q.correct})"></button></td>
+                                    <td><button id="btn-${q.id}-false" class="tf-tick-btn" onclick="handleTF('${q.id}', false, ${q.correct})"></button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderSA() {
+            const container = document.getElementById('short-answer-section');
+            container.innerHTML = data.shortAnswer.map((q, index) => `
+                <div class="question-block">
+                    <div class="question-text">Câu ${index + 1}: ${q.question}</div>
+                    <div class="sa-input-wrapper">
+                        <input type="text" id="input-${q.id}" class="sa-input" placeholder="Gõ đáp án và nhấn Enter..." onkeydown="if(event.key==='Enter') handleSA('${q.id}', '${q.correct}')" onblur="handleSA('${q.id}', '${q.correct}')">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Logic xử lý
+        window.handleMC = function(id, val, correct) {
+            if(locked[id] || isSubmitted) return;
+            const btn = document.getElementById(`btn-${id}-${val}`);
+            if(val === correct) {
+                playSound('correct');
+                answers[id] = val;
+                locked[id] = true;
+                btn.classList.add('correct');
+                // Vô hiệu hóa các nút khác
+                const otherBtns = ['A', 'B', 'C', 'D'].filter(v => v !== val);
+                otherBtns.forEach(v => {
+                    const b = document.getElementById(`btn-${id}-${v}`);
+                    if(b) b.style.opacity = '0.4';
+                });
+            } else {
+                playSound('wrong');
+                btn.classList.add('wrong');
+            }
+        };
+
+        window.handleTF = function(id, val, correct) {
+            if(locked[id] || isSubmitted) return;
+            const btn = document.getElementById(`btn-${id}-${val}`);
+            if(val === correct) {
+                playSound('correct');
+                answers[id] = val;
+                locked[id] = true;
+                btn.classList.add('correct');
+                const otherVal = !val;
+                document.getElementById(`btn-${id}-${otherVal}`).style.opacity = '0.3';
+            } else {
+                playSound('wrong');
+                btn.classList.add('wrong');
+            }
+        };
+
+        window.handleSA = function(id, correct) {
+            if(locked[id] || isSubmitted) return;
+            const input = document.getElementById(`input-${id}`);
+            const val = input.value.trim();
+            if(!val) return;
+            if(val === correct) {
+                playSound('correct');
+                answers[id] = val;
+                locked[id] = true;
+                input.classList.add('correct');
+                input.readOnly = true;
+            } else {
+                playSound('wrong');
+                input.classList.add('wrong');
+                setTimeout(() => input.classList.remove('wrong'), 1000);
+            }
+        };
+
+        window.submitExam = function() {
+            isSubmitted = true;
+            let currentScore = 0;
+            
+            data.multipleChoice.forEach(q => { if(answers[q.id] === q.correct) currentScore++; });
+            data.trueFalse.forEach(q => { if(answers[q.id] === q.correct) currentScore++; });
+            data.shortAnswer.forEach(q => { if(answers[q.id] && answers[q.id].trim() === q.correct) currentScore += 2; });
+
+            const total = data.multipleChoice.length + data.trueFalse.length + (data.shortAnswer.length * 2);
+            
+            const scoreDisp = document.getElementById('final-score');
+            scoreDisp.innerText = currentScore;
+            scoreDisp.classList.add('animate-zoom');
+
+            const commentDisp = document.getElementById('teacher-comment');
+            if(currentScore === total) {
+                commentDisp.innerHTML = `<span class="handwritten-comment">Bài làm hoàn hảo, nắm vững kiến thức.</span>`;
+            }
+            else if(currentScore >= total/2) {
+                commentDisp.innerHTML = `<span class="handwritten-comment">Khá tốt. Cần lưu ý các lỗi sai và ôn tập kĩ hơn.</span>`;
+            }
+            else {
+                commentDisp.innerHTML = `<span class="handwritten-comment">Chưa đạt yêu cầu. Em cần xem lại bài giảng và học kĩ bài hơn.</span>`;
+            }
+
+            document.getElementById('btn-submit').classList.add('hidden');
+            document.getElementById('btn-reset').classList.remove('hidden');
+            
+            // Khóa toàn bộ input
+            document.querySelectorAll('button, input').forEach(el => el.disabled = true);
+            document.getElementById('btn-reset').disabled = false;
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.resetExam = function() {
+            location.reload();
+        };
+
+        window.toggleFullScreen = function() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Lỗi khi mở toàn màn hình: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        };
+
+        init();
+    </script>
+</body>
+</html>
